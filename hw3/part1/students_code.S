@@ -4,40 +4,64 @@
 # Input: matrix (rdi), n (rsi), row (rdx), col (rcx)
 # Output: eax contains the element
 get_element_from_matrix:
-	mov rax, rdx      # row
-    imul rax, rsi     # row * n
-    add rax, rcx      # row * n + col
-    imul rax, 4       # each element is a 4-byte integer
-    add rax, rdi      # address of matrix[row][col]
-    mov eax, [rax]    # load the element
-	ret
+    pushq %rbp
+    movq %rsp, %rbp
+	movq %rdx, %rax              # row
+    imulq %rsi, %rax             # row * n
+    addq %rcx, %rax              # row * n + col
+    imulq $4, %rax               # each element is a 4-byte integer
+    movl (%rdi, %rax), %eax      # load the element of matrix[row][col]
+	popq %rbp
+    ret
 
 # Function to calculate inner product using get_element_from_matrix
 # Input: mat_a (rdi), mat_b (rsi), row_a (rdx), col_b (rcx), max_col_a (r8), max_col_b (r9)
-# Output: eax contains the inner product
+# Output: rax contains the inner product
 inner_prod:
-    xor eax, eax      # Initialize result to 0
-    mov ecx, r8       # Counter for loop
+
+    pushq %rbp
+    movq %rsp, %rbp
+    xorq %rax, %rax              # Initialize result to 0
+    movl %r8, %ecx               # Counter for loop, max_col_a and mat_b's number of rows should be equal
+    xorl %esi, %esi              # i = 0
 
 inner_prod_loop:
-    # Get elements from mat_a and mat_b
-    mov rax, rdi      # mat_a
-    mov rdx, rcx      # col_b
+
+    pushq %rsi
+    pushq %rcx
+                                 # mat_a is alreay in rdi
+    movq %r8, %rsi               # max_col_a
+                                 # row_a is alreay in rdx
+    movl %esi, %rcx              # i
     call get_element_from_matrix
-    mov ebx, eax      # mat_a[row_a][i]
+    popq %rsi
+    popq %rcx
+    movq %rax, %rbx              # mat_a[row_a][i]
 
-    mov rax, rsi      # mat_b
-    mov rdx, r9       # max_col_b
+    pushq %rdi
+    pushq %rsi
+    pushq %rdx
+    movq %rsi, %rdi              # mat_b
+    movq %r9, %rsi               # max_col_b
+    movl %esi, %rdx              # i
+                                 # col_b is already in rcx
     call get_element_from_matrix
-    imul ebx, eax     # mat_a[row_a][i] * mat_b[i][col_b]
+    popq %rdi
+    popq %rsi
+    popq %rdx
 
-    add eax, ebx      # result += mat_a[row_a][i] * mat_b[i][col_b]
-
-    add rdi, 4        # Move to the next element in mat_a
-    add rsi, 4        # Move to the next element in mat_b
+    imulq %rax, %rbx             # mat_a[row_a][i] * mat_b[i][col_b]
+    addq %rbx, %rax              # result += mat_a[row_a][i] * mat_b[i][col_b]
+    inc %esi                     # i++
     loop inner_prod_loop
 
+	popq %rbp
     ret
 
 matrix_multiplication:
 	ret
+
+# Lidor: Is Lidor responsible to preserve rbx?
+# Change the loop to bne or something
+# Verify the callee-save
+# Differences between signed and unsigned
