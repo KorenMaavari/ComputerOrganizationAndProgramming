@@ -11,7 +11,7 @@ get_element_from_matrix:
     addq %rcx, %rax              # row * n + col
     imulq $4, %rax               # each element is a 4-byte integer
     movl (%rdi, %rax), %eax      # load the element of matrix[row][col]
-	popq %rbp
+    popq %rbp
     ret
 
 # Function to calculate inner product using get_element_from_matrix
@@ -55,11 +55,11 @@ inner_prod_loop:
     inc %esi                     # i++
     loop inner_prod_loop
 
-	popq %rbp
+    popq %rbp
     ret
 
 matrix_multiplication:
-	ret
+    ret
 
 # Lidor: Is Lidor responsible to preserve rbx?
 # Change the loop to bne or something
