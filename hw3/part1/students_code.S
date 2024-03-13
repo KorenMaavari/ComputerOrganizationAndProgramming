@@ -73,5 +73,3 @@ inner_prod_end:
 
 matrix_multiplication:
     ret
-
-# Lidor: Is Lidor responsible to preserve rbx?
