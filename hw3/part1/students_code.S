@@ -21,39 +21,52 @@ inner_prod:
 
     pushq %rbp
     movq %rsp, %rbp
-    xorq %rax, %rax              # Initialize result to 0
-    movl %r8, %ecx               # Counter for loop, max_col_a and mat_b's number of rows should be equal
-    xorl %esi, %esi              # i = 0
+    pushq %rbx                   # collee-save
+    pushq %r12                   # collee-save
+    pushq %r13                   # collee-save
+    xorq %r12, %r12              # initialize curr_result to 0
+    xorq %rax, %rax              # initialize result to 0
+    xorq %r13, %r13              # i = 0
 
 inner_prod_loop:
 
-    pushq %rsi
-    pushq %rcx
+    cmp %r13, %r8                # compare i with max_col_a
+    je  inner_prod_end           # jump to inner_prod_end if i == max_col_a
+
+    pushq %rsi                   # caller-save
+    pushq %rcx                   # caller-save
                                  # mat_a is alreay in rdi
     movq %r8, %rsi               # max_col_a
                                  # row_a is alreay in rdx
-    movl %esi, %rcx              # i
-    call get_element_from_matrix
-    popq %rsi
-    popq %rcx
+    movq %r13, %rcx              # i
+    call get_element_from_matrix # call
+    popq %rcx                    # caller-save
+    popq %rsi                    # caller-save
     movq %rax, %rbx              # mat_a[row_a][i]
 
-    pushq %rdi
-    pushq %rsi
-    pushq %rdx
+    pushq %rdi                   # caller-save
+    pushq %rsi                   # caller-save
+    pushq %rdx                   # caller-save
     movq %rsi, %rdi              # mat_b
     movq %r9, %rsi               # max_col_b
-    movl %esi, %rdx              # i
+    movq %r13, %rdx              # i
                                  # col_b is already in rcx
-    call get_element_from_matrix
-    popq %rdi
-    popq %rsi
-    popq %rdx
+    call get_element_from_matrix # call
+    popq %rdx                    # caller-save
+    popq %rsi                    # caller-save
+    popq %rdi                    # caller-save
 
     imulq %rax, %rbx             # mat_a[row_a][i] * mat_b[i][col_b]
-    addq %rbx, %rax              # result += mat_a[row_a][i] * mat_b[i][col_b]
-    inc %esi                     # i++
-    loop inner_prod_loop
+    addq %rbx, %r12              # curr_result += mat_a[row_a][i] * mat_b[i][col_b]
+    inc %r13                     # i++
+    jmp inner_prod_loop          # jump back to the beginning of the loop
+
+inner_prod_end:
+
+    movq %r12, %rax              # result = curr_result
+    popq %r13                    # collee-save
+    popq %r12                    # collee-save
+    popq %rbx                    # collee-save
 
     popq %rbp
     ret
@@ -62,6 +75,3 @@ matrix_multiplication:
     ret
 
 # Lidor: Is Lidor responsible to preserve rbx?
-# Change the loop to bne or something
-# Verify the callee-save
-# Differences between signed and unsigned
